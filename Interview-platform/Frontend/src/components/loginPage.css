@@ -1,0 +1,192 @@
+:root {
+    --accent-color: #ff2a85;
+    --accent-glow: rgba(255, 42, 133, 0.4);
+    --bg-gradient: radial-gradient(circle at 50% 50%, #170210 0%, #000000 80%);
+    --card-bg: rgba(255, 255, 255, 0.02);
+    --border-color: rgba(255, 42, 133, 0.25);
+    --text-muted: #a1a1a6;
+}
+
+.Outer-login-container {
+    min-height: 100vh;
+    width: 100%;
+    background: var(--bg-gradient);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 120px 24px 80px 24px;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.Main-container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.Login-container {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 28px;
+    padding: 48px 40px;
+    box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 0 30px rgba(255, 42, 133, 0.03),
+        0 0 40px rgba(255, 42, 133, 0.05);
+    backdrop-filter: blur(24px);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.Login-container:hover {
+    border-color: rgba(255, 42, 133, 0.4);
+    box-shadow: 
+        0 35px 70px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 0 40px rgba(255, 42, 133, 0.08),
+        0 0 50px rgba(255, 42, 133, 0.08);
+}
+
+.Login-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 8px;
+    color: #ffffff;
+    background: linear-gradient(90deg, #ffffff 30%, var(--accent-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Flexbox layout for input fields */
+.inputs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.user-name,
+.password-name {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 1rem;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    font-family: inherit;
+}
+
+.user-name::placeholder,
+.password-name::placeholder {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.user-name:focus,
+.password-name:focus {
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 15px rgba(255, 42, 133, 0.25);
+    transform: translateY(-1px);
+}
+
+/* Styling Buttons */
+.Login-button {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--accent-color) 0%, #b2145b 100%);
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 4px 15px rgba(255, 42, 133, 0.2);
+    font-family: inherit;
+}
+
+.Login-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 24px rgba(255, 42, 133, 0.45),
+        0 0 20px rgba(255, 42, 133, 0.2);
+    filter: brightness(1.05);
+}
+
+.Login-button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(255, 42, 133, 0.2);
+}
+
+.Google-login {
+    width: 100%;
+    padding: 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    font-family: inherit;
+}
+
+.Google-login svg {
+    transition: transform 0.3s ease;
+}
+
+.Google-login:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
+}
+
+.Google-login:hover svg {
+    transform: scale(1.1);
+}
+
+.Google-login:active {
+    transform: translateY(0);
+}
+
+/* Responsiveness */
+@media (max-width: 480px) {
+    .Login-container {
+        padding: 36px 24px;
+        border-radius: 20px;
+    }
+
+    .Login-title {
+        font-size: 2.1rem;
+    }
+
+    .user-name,
+    .password-name,
+    .Login-button,
+    .Google-login {
+        padding: 14px 16px;
+    }
+}

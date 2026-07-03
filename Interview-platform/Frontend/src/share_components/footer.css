@@ -1,0 +1,54 @@
+.Outer-footer-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(120deg, #000000 40%, #1a0212 100%);
+    padding: 16px 32px;
+    /* Fainted pink glow inside the footer at the top */
+    box-shadow: inset 0 10px 30px rgba(255, 42, 133, 0.15);
+    border-top: 1px solid rgba(255, 42, 133, 0.3);
+    color: #ffffff;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+}
+
+.Outer-footer-box.footer--hidden {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mail-id,
+.location-part,
+.Phone-number {
+    color: #a1a1a6;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.mail-id a,
+.LinkedIn-profile {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.mail-id a:hover,
+.LinkedIn-profile:hover {
+    color: rgba(255, 42, 133, 1);
+    text-shadow: 0 0 8px rgba(255, 42, 133, 0.6);
+}
+
+.Personal-info-tab {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}

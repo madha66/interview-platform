@@ -1,0 +1,165 @@
+.Outer-component-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(120deg, #000000 40%, #1a0212 100%);
+    padding: 16px 32px;
+    box-shadow: inset 0 -10px 30px rgba(255, 42, 133, 0.15);
+    border-bottom: 1px solid rgba(255, 42, 133, 0.3);
+    color: #ffffff;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+}
+
+.Outer-component-box.header--hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.Title-part {
+    display: flex;
+    align-items: center;
+}
+
+.Title-part p {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.Title-part p:hover {
+    opacity: 0.9;
+}
+
+.Nav-bar-part {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    /* Extendible properties */
+    flex-grow: 1;
+    justify-content: flex-end;
+}
+
+.home-part,
+.about-part {
+    color: #a1a1a6;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: color 0.2s ease, transform 0.2s ease;
+    user-select: none;
+}
+
+.home-part:hover,
+.about-part:hover {
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.Hamburger-box {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.Hamburger-box:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.Hamburger-box:active {
+    transform: scale(0.95);
+}
+
+.hamburger-icon {
+    width: 20px;
+    height: 16px;
+    display: block;
+    transition: filter 0.2s ease;
+}
+
+.Hamburger-box:hover .hamburger-icon {
+    filter: drop-shadow(0 0 4px rgba(255, 42, 133, 0.8));
+}
+
+.Hamburger-box {
+    position: relative;
+}
+
+.List-container {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 12px;
+    background: rgba(10, 2, 8, 0.85);
+    border: 1px solid rgba(255, 42, 133, 0.3);
+    border-radius: 12px;
+    padding: 6px 0;
+    min-width: 150px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5),
+        0 0 15px rgba(255, 42, 133, 0.15);
+    z-index: 1000;
+    animation: fadeInDropdown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+.List-container ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.List-container li {
+    padding: 12px 20px;
+    color: #a1a1a6;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: capitalize;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.List-container li:hover {
+    background: rgba(255, 42, 133, 0.12);
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(255, 42, 133, 0.8);
+}
+
+.List-container li:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 42, 133, 0.1);
+}
+
+@keyframes fadeInDropdown {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

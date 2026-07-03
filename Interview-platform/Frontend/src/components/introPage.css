@@ -1,0 +1,428 @@
+:root {
+    --accent-color: #ff2a85;
+    --accent-glow: rgba(255, 42, 133, 0.4);
+    --bg-gradient: radial-gradient(circle at 50% 50%, #170210 0%, #000000 80%);
+    --card-bg: rgba(255, 255, 255, 0.02);
+    --border-color: rgba(255, 42, 133, 0.25);
+    --text-muted: #a1a1a6;
+}
+
+.Intro-section {
+    min-height: 100vh;
+    width: 100%;
+    background: var(--bg-gradient);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 100px 24px 80px 24px;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.photo-gallery-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 1500px;
+    position: relative;
+}
+
+.slideshow-wrapper {
+    position: relative;
+    width: 100%;
+    height: 650px;
+    overflow: hidden;
+    border-radius: 32px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 42, 133, 0.01) 50%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 42, 133, 0.2);
+    backdrop-filter: blur(24px);
+    box-shadow:
+        0 30px 70px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 0 30px rgba(255, 42, 133, 0.05),
+        0 0 40px rgba(255, 42, 133, 0.05);
+    transition: box-shadow 0.5s ease, border-color 0.5s ease, transform 0.5s ease;
+}
+
+.slideshow-wrapper:hover {
+    border-color: rgba(255, 42, 133, 0.4);
+    box-shadow:
+        0 35px 80px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 0 40px rgba(255, 42, 133, 0.1),
+        0 0 60px rgba(255, 42, 133, 0.1);
+}
+
+
+/* Individual Slide Cards */
+.Outer-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 40px 120px;
+    /* Increased padding to prevent overlapping with absolute side buttons */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 50px;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Left details column */
+.details {
+    flex: 1.2;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #ffffff;
+    background: linear-gradient(90deg, #ffffff 40%, var(--accent-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    text-align: left;
+}
+
+/* Right Image layout */
+.Image-section {
+    flex: 0.8;
+    width: 100%;
+    max-width: 380px;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 12px 36px rgba(255, 42, 133, 0.15);
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+        box-shadow 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.Image-section:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(255, 42, 133, 0.25),
+        0 0 15px rgba(255, 42, 133, 0.2);
+}
+
+/* Carousel Animation State Mappings */
+.Outer-container.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+
+.Outer-container.prev {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.Outer-container.next {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+/* Navigation buttons absolute positioned on the extreme left and right ends */
+.back-button,
+.Forward-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--border-color);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 12px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    backdrop-filter: blur(10px);
+    user-select: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.back-button {
+    left: 24px;
+}
+
+.Forward-button {
+    right: 24px;
+}
+
+.back-button::before {
+    content: "←";
+}
+
+.Forward-button::after {
+    content: "→";
+}
+
+.back-button:hover,
+.Forward-button:hover {
+    background: rgba(255, 42, 133, 0.2);
+    border-color: var(--accent-color);
+    color: #ffffff;
+    box-shadow: 0 0 20px var(--accent-glow), 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.back-button:hover {
+    transform: translateY(-50%) translateX(-2px);
+}
+
+.Forward-button:hover {
+    transform: translateY(-50%) translateX(2px);
+}
+
+.back-button:active,
+.Forward-button:active {
+    transform: translateY(-50%);
+    box-shadow: 0 0 10px rgba(255, 42, 133, 0.2);
+}
+
+/* Responsive Rules */
+@media (max-width: 992px) {
+    .slideshow-wrapper {
+        height: 420px;
+    }
+
+    .Outer-container {
+        padding: 40px 90px;
+        gap: 30px;
+    }
+
+    .details {
+        font-size: 1.8rem;
+    }
+
+    .Image-section {
+        max-width: 280px;
+        height: 220px;
+    }
+
+    .back-button {
+        left: 16px;
+    }
+
+    .Forward-button {
+        right: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .slideshow-wrapper {
+        height: 520px;
+    }
+
+    .Outer-container {
+        flex-direction: column-reverse;
+        justify-content: center;
+        gap: 24px;
+        padding: 40px 70px;
+        text-align: center;
+    }
+
+    .details {
+        text-align: center;
+        font-size: 1.5rem;
+    }
+
+    .Image-section {
+        max-width: 100%;
+        height: 180px;
+    }
+
+    .back-button,
+    .Forward-button {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        border-radius: 6px;
+    }
+
+    .back-button {
+        left: 10px;
+    }
+
+    .Forward-button {
+        right: 10px;
+    }
+}
+
+/* About Us Section Styling */
+.About-us-container {
+    position: relative;
+    width: 100%;
+    height: 6500px;
+    /* Gives the scrolling height track */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.About-us-section {
+    position: sticky;
+    top: 80px;
+    height: calc(100vh - 160px);
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.About-us-title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.Main-title {
+    font-size: 3.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    color: #ffffff;
+    background: linear-gradient(90deg, #ffffff 30%, var(--accent-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.content-of-title {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+}
+
+.bottom-portion {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+/* Content Container for Slide lists */
+.content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Cards for About-Us Slides */
+.Outer-container-abouts {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42%;
+    padding: 32px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 24px;
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+        right 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+        opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+        transform 0.1s linear;
+    /* Fast vertical float translation matching scroll */
+}
+
+/* Static Left or Right placement */
+.Outer-container-abouts.left {
+    left: 0;
+}
+
+.Outer-container-abouts.right {
+    right: 0;
+}
+
+/* Details and Image inside About Us cards */
+.details-abouts {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #ffffff;
+    margin-bottom: 24px;
+    letter-spacing: -0.3px;
+}
+
+.Image-section-abouts {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(255, 42, 133, 0.15);
+}
+
+/* Responsive Rules for About Us Section */
+@media (max-width: 992px) {
+    .Outer-container-abouts {
+        width: 45%;
+        padding: 24px;
+    }
+
+    .details-abouts {
+        font-size: 1.25rem;
+    }
+
+}
+
+@media (max-width: 768px) {
+    .About-us-container {
+        height: auto;
+    }
+
+    .About-us-section {
+        position: relative;
+        top: 0;
+        height: auto;
+        padding: 40px 0;
+    }
+
+    .bottom-portion {
+        height: auto;
+        min-height: 450px;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+    }
+
+
+    .Outer-container-abouts {
+        position: relative;
+        top: 0;
+        transform: none !important;
+        width: 100%;
+        margin-bottom: 20px;
+        opacity: 1 !important;
+        display: flex;
+        pointer-events: auto;
+    }
+}
