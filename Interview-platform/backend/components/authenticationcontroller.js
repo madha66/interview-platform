@@ -81,7 +81,7 @@ const googlecallbackpage = async (req, res) => {
         if (typeof req.flash === "function") {
             req.flash("errors", "couldnt login due to invalid login attempt. Please login again!")
         }
-        return res.redirect("https://interview-platform-3vs4xk1bd-madha66s-projects.vercel.app/login")
+        return res.redirect("https://interview-platform-fb8mppenr-madha66s-projects.vercel.app/login")
     }
     let tokens;
     try {
@@ -93,7 +93,7 @@ const googlecallbackpage = async (req, res) => {
         if (typeof req.flash === "function") {
             req.flash("errors", "couldnt login due to invalid login attempt. Please login again!")
         }
-        return res.redirect("https://interview-platform-3vs4xk1bd-madha66s-projects.vercel.app/login")
+        return res.redirect("https://interview-platform-fb8mppenr-madha66s-projects.vercel.app/login")
     }
     const claims = decodeIdToken(tokens.idToken())
     const { sub: googleUserid, name, email } = claims;
@@ -128,6 +128,6 @@ const googlecallbackpage = async (req, res) => {
         console.log("[OAuth Callback] Created user:", user);
     }
     console.log("[OAuth Callback] Redirecting to frontend homepage.");
-    res.redirect("https://interview-platform-3vs4xk1bd-madha66s-projects.vercel.app/landings")
+    res.redirect("https://interview-platform-fb8mppenr-madha66s-projects.vercel.app/landings")
 }
 module.exports = { googleloginpage, googlecallbackpage };
