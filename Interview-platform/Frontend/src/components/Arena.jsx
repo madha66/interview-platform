@@ -25,7 +25,7 @@ function Arena() {
   // Navigation & Role states
   // Views: 'SELECT_ROLE', 'INSTRUCTOR_CREATE', 'INSTRUCTOR_DASHBOARD', 'STUDENT_JOIN', 'STUDENT_WORKSPACE'
   const [view, setView] = useState('SELECT_ROLE');
-  
+
   // Instructor Creator States
   const [questionTitle, setQuestionTitle] = useState('');
   const [questionDesc, setQuestionDesc] = useState('');
@@ -43,7 +43,7 @@ function Arena() {
   const [studentName, setStudentName] = useState('');
   const [searchMeetingId, setSearchMeetingId] = useState('');
   const [sessionData, setSessionData] = useState(null);
-  
+
   // Student Workspace Editor States
   const [selectedLang, setSelectedLang] = useState('python');
   const [editorCode, setEditorCode] = useState(LANGUAGE_CONFIGS.python.template);
@@ -96,7 +96,7 @@ function Arena() {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/arena/create', {
+      const response = await fetch('https://interview-platform-93yk.onrender.com/api/arena/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,7 +112,7 @@ function Arena() {
 
       const data = await response.json();
       setMeetingId(data.meetingId);
-      
+
       // Save session credentials for resumption and landing page banner
       localStorage.setItem('ca_active_session', data.meetingId);
       localStorage.setItem('ca_active_role', 'instructor');
@@ -129,14 +129,14 @@ function Arena() {
   // Start polling submissions for instructor dashboard
   const startInstructorPolling = (mId) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
-    
+
     const fetchSubmissions = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/arena/submissions/${mId}`);
+        const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/submissions/${mId}`);
         if (response.ok) {
           const data = await response.json();
           setSubmissions(data);
-          
+
           // Sync active candidate detail pane with live updates from the database
           setSelectedSub(prevSelected => {
             if (!prevSelected) return null;
@@ -162,7 +162,7 @@ function Arena() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/arena/session/${searchMeetingId.trim().toUpperCase()}`);
+      const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/session/${searchMeetingId.trim().toUpperCase()}`);
       if (!response.ok) {
         throw new Error('Invalid Meeting ID. Session not found.');
       }
@@ -190,7 +190,7 @@ function Arena() {
 
     const fetchMySubmission = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/arena/submissions/${mId}`);
+        const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/submissions/${mId}`);
         if (response.ok) {
           const allSubmissions = await response.json();
           const found = allSubmissions.find(s => s.studentName.toLowerCase() === name.toLowerCase());
@@ -260,7 +260,7 @@ function Arena() {
           const cleanOutput = stdout.trim();
           const cleanExpected = tc.expectedOutput.trim();
           const passed = cleanOutput === cleanExpected;
-          
+
           logs += `Test Case ${i + 1} Done. Output: "${cleanOutput}"\n`;
           setConsoleLogs(logs);
 
@@ -289,7 +289,7 @@ function Arena() {
   const handleSubmitCode = async () => {
     if (!sessionData || !studentName) return;
     setIsSubmitting(true);
-    
+
     // Ensure we run the test cases first to get the latest results
     let currentResults = runResults;
     if (currentResults.length === 0) {
@@ -304,7 +304,7 @@ function Arena() {
           const cleanOutput = stdout.trim();
           const cleanExpected = tc.expectedOutput.trim();
           const passed = stderr ? false : (cleanOutput === cleanExpected);
-          
+
           results.push({
             input: tc.input,
             expected: tc.expectedOutput,
@@ -322,7 +322,7 @@ function Arena() {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/arena/submit', {
+      const response = await fetch('https://interview-platform-93yk.onrender.com/api/arena/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -355,7 +355,7 @@ function Arena() {
     if (!selectedSub || !meetingId) return;
 
     try {
-      const response = await fetch('http://localhost:3000/api/arena/evaluate', {
+      const response = await fetch('https://interview-platform-93yk.onrender.com/api/arena/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -371,7 +371,7 @@ function Arena() {
       }
 
       const updated = await response.json();
-      
+
       // Update local state list
       const updatedList = submissions.map(s => {
         if (s.studentName === updated.studentName) {
@@ -407,7 +407,7 @@ function Arena() {
     if (view !== 'STUDENT_WORKSPACE' || !sessionData || !studentName) return;
 
     const delayDebounceFn = setTimeout(() => {
-      fetch('http://localhost:3000/api/arena/submit', {
+      fetch('https://interview-platform-93yk.onrender.com/api/arena/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -437,10 +437,10 @@ function Arena() {
       } else if (savedRole === 'student' && savedName) {
         setStudentName(savedName);
         setSearchMeetingId(savedSession);
-        
+
         const resumeStudentSession = async () => {
           try {
-            const response = await fetch(`http://localhost:3000/api/arena/session/${savedSession}`);
+            const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/session/${savedSession}`);
             if (response.ok) {
               const data = await response.json();
               setSessionData(data);
@@ -463,7 +463,7 @@ function Arena() {
 
   return (
     <div className="ca-page-container arena-container">
-      
+
       {/* Back to landing link */}
       <Link to="/Landings" className="arena-back-link" onClick={() => {
         if (pollingRef.current) clearInterval(pollingRef.current);
@@ -479,9 +479,9 @@ function Arena() {
         <section className="arena-role-select">
           <h2 className="arena-role-title">Choose your role to enter the interview arena</h2>
           <div className="arena-role-grid">
-            
-            <div 
-              className="arena-role-card arena-role-instructor" 
+
+            <div
+              className="arena-role-card arena-role-instructor"
               onClick={() => setView('INSTRUCTOR_CREATE')}
             >
               <div className="arena-role-icon">👩‍🏫</div>
@@ -489,8 +489,8 @@ function Arena() {
               <p>Post a technical question, define test cases, and evaluate student submissions live.</p>
             </div>
 
-            <div 
-              className="arena-role-card arena-role-student" 
+            <div
+              className="arena-role-card arena-role-student"
               onClick={() => setView('STUDENT_JOIN')}
             >
               <div className="arena-role-icon">👨‍💻</div>
@@ -507,13 +507,13 @@ function Arena() {
         <section>
           <form className="arena-instructor-create" onSubmit={handleCreateSession}>
             <h2 className="arena-creator-title">Post Coding Challenge</h2>
-            
+
             <div className="ca-input-group">
               <label className="ca-input-label">Challenge Title</label>
-              <input 
-                type="text" 
-                className="ca-text-input" 
-                placeholder="e.g. Reverse a LinkedList" 
+              <input
+                type="text"
+                className="ca-text-input"
+                placeholder="e.g. Reverse a LinkedList"
                 value={questionTitle}
                 onChange={(e) => setQuestionTitle(e.target.value)}
                 required
@@ -522,8 +522,8 @@ function Arena() {
 
             <div className="ca-input-group">
               <label className="ca-input-label">Challenge Description</label>
-              <textarea 
-                className="arena-textarea" 
+              <textarea
+                className="arena-textarea"
                 placeholder="Detail the question requirements, parameters, constraints, and instructions..."
                 value={questionDesc}
                 onChange={(e) => setQuestionDesc(e.target.value)}
@@ -533,22 +533,22 @@ function Arena() {
 
             <div className="test-cases-section">
               <label className="ca-input-label">Test Cases (Inputs & Expected Outputs)</label>
-              
+
               {testCases.map((tc, index) => (
                 <div className="test-case-row" key={index}>
                   <div className="ca-input-group">
-                    <input 
-                      type="text" 
-                      className="ca-text-input" 
+                    <input
+                      type="text"
+                      className="ca-text-input"
                       placeholder={`Input ${index + 1}`}
                       value={tc.input}
                       onChange={(e) => updateTestCase(index, 'input', e.target.value)}
                     />
                   </div>
                   <div className="ca-input-group">
-                    <input 
-                      type="text" 
-                      className="ca-text-input" 
+                    <input
+                      type="text"
+                      className="ca-text-input"
                       placeholder={`Expected Output ${index + 1}`}
                       value={tc.expectedOutput}
                       onChange={(e) => updateTestCase(index, 'expectedOutput', e.target.value)}
@@ -556,9 +556,9 @@ function Arena() {
                     />
                   </div>
                   {testCases.length > 1 && (
-                    <button 
-                      type="button" 
-                      className="remove-tc-btn" 
+                    <button
+                      type="button"
+                      className="remove-tc-btn"
                       onClick={() => removeTestCase(index)}
                       title="Remove Test Case"
                     >
@@ -585,13 +585,13 @@ function Arena() {
         <section>
           <form className="arena-join-box" onSubmit={handleJoinSession}>
             <h2 className="arena-join-title">Join Arena Session</h2>
-            
+
             <div className="ca-input-group">
               <label className="ca-input-label">Your Full Name</label>
-              <input 
-                type="text" 
-                className="ca-text-input" 
-                placeholder="Enter your name" 
+              <input
+                type="text"
+                className="ca-text-input"
+                placeholder="Enter your name"
                 value={studentName}
                 onChange={(e) => setStudentName(e.target.value)}
                 required
@@ -600,10 +600,10 @@ function Arena() {
 
             <div className="ca-input-group">
               <label className="ca-input-label">Meeting Room ID</label>
-              <input 
-                type="text" 
-                className="ca-text-input" 
-                placeholder="e.g. ARENA-XYZ1" 
+              <input
+                type="text"
+                className="ca-text-input"
+                placeholder="e.g. ARENA-XYZ1"
                 value={searchMeetingId}
                 onChange={(e) => setSearchMeetingId(e.target.value)}
                 required
@@ -642,8 +642,8 @@ function Arena() {
                   </div>
                 ) : (
                   submissions.map((sub, idx) => (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       className={`candidate-item ${selectedSub && selectedSub.studentName === sub.studentName ? 'active' : ''}`}
                       onClick={() => handleSelectCandidate(sub)}
                     >
@@ -690,11 +690,11 @@ function Arena() {
 
                   <form className="evaluation-form" onSubmit={handleSaveEvaluation}>
                     <h4 style={{ margin: '0', fontFamily: 'Space Mono' }}>Evaluation Feedback</h4>
-                    
+
                     <div className="ca-input-group">
                       <label className="ca-input-label">Grade / Result</label>
-                      <select 
-                        className="eval-select" 
+                      <select
+                        className="eval-select"
                         value={evalGrade}
                         onChange={(e) => setEvalGrade(e.target.value)}
                       >
@@ -706,8 +706,8 @@ function Arena() {
 
                     <div className="ca-input-group">
                       <label className="ca-input-label">Written Feedback</label>
-                      <textarea 
-                        className="arena-textarea" 
+                      <textarea
+                        className="arena-textarea"
                         style={{ height: '80px' }}
                         placeholder="Provide details about their code complexity, clean practices, or optimization recommendations..."
                         value={evalFeedback}
@@ -733,7 +733,7 @@ function Arena() {
       {/* VIEW 5: STUDENT SPLIT WORKSPACE SCREEN */}
       {view === 'STUDENT_WORKSPACE' && sessionData && (
         <section className="student-workspace">
-          
+
           {/* Left Panel: Question Statement and Test Cases */}
           <div className="student-left-pane">
             <div className="question-card">
@@ -787,8 +787,8 @@ function Arena() {
           {/* Right Panel: Code Editor, Console logs, Run CTAs */}
           <div className="student-right-pane">
             <div className="editor-controls">
-              <select 
-                className="lang-select" 
+              <select
+                className="lang-select"
                 value={selectedLang}
                 onChange={(e) => handleLangChange(e.target.value)}
               >
@@ -796,7 +796,7 @@ function Arena() {
                 <option value="cpp">C++ (GCC 10)</option>
                 <option value="java">Java (JDK 15)</option>
               </select>
-              
+
               <span style={{ color: '#a1a1a6', fontSize: '0.85rem', fontFamily: 'Space Mono' }}>
                 Room: {sessionData.meetingId}
               </span>
@@ -804,7 +804,7 @@ function Arena() {
 
             {/* Custom Mono Text Editor */}
             <div className="custom-editor-container">
-              <textarea 
+              <textarea
                 className="editor-textarea"
                 value={editorCode}
                 onChange={(e) => setEditorCode(e.target.value)}
@@ -820,16 +820,16 @@ function Arena() {
 
             {/* Submission Actions */}
             <div className="action-row">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="workspace-btn run-btn"
                 onClick={handleRunCode}
                 disabled={isRunning || isSubmitting}
               >
                 {isRunning ? 'Compiling...' : 'Run Code'}
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="workspace-btn submit-btn"
                 onClick={handleSubmitCode}
                 disabled={isRunning || isSubmitting}
