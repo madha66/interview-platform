@@ -4,7 +4,7 @@ require("dotenv").config({ path: path.resolve(__dirname, "../../../.env") });
 const google = new Google(
     process.env.Google_client_id,
     process.env.Google_client_password,
-    "https://interview-platform-nine.vercel.app/google/callback"
+    "https://interview-platform-eq1y.onrender.com/google/callback"
 );
 
 module.exports = { google };
