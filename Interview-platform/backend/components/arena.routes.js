@@ -27,7 +27,7 @@ router.post('/create', async (req, res) => {
     return res.status(201).json(session);
   } catch (error) {
     console.error('Error creating interview session:', error);
-    return res.status(500).json({ error: 'Server error creating session' });
+    return res.status(500).json({ error: 'Server error creating session', details: error.message });
   }
 });
 
