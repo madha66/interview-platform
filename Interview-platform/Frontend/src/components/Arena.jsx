@@ -76,9 +76,13 @@ function Arena() {
   // Proctoring frame sending loop
   const startProctoringLoop = (stream) => {
     if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
+    console.log("[Proctor] Active stream detected. Initializing frame capture interval...");
 
     proctorIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || !canvasRef.current) return;
+      if (!videoRef.current || !canvasRef.current) {
+        console.warn("[Proctor] Capture elements not available in DOM yet.");
+        return;
+      }
 
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -94,9 +98,13 @@ function Arena() {
 
       try {
         const uppercaseId = sessionData?.meetingId || searchMeetingId;
-        if (!uppercaseId || !studentName) return;
+        if (!uppercaseId || !studentName) {
+          console.warn("[Proctor] Missing session metadata or student name. Skipping frame.");
+          return;
+        }
 
-        const response = await fetch(`${API_BASE_URL}/api/arena/session/${uppercaseId.toUpperCase()}/student/${studentName}/detect-phone`, {
+        const url = `${API_BASE_URL}/api/arena/session/${uppercaseId.toUpperCase()}/student/${studentName}/detect-phone`;
+        const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ frame: frameData })
@@ -104,6 +112,8 @@ function Arena() {
 
         if (response.ok) {
           const data = await response.json();
+          console.log(`[Proctor] Server response: phoneDetected=${data.phoneDetected}, confidence=${data.confidence}, status=${data.status}`);
+          
           if (data.status === 'skipped') {
             // Ignore skipped frames to preserve current UI warning state
             return;
@@ -119,9 +129,11 @@ function Arena() {
           } else {
             setLocalPhoneDetected(false);
           }
+        } else {
+          console.error(`[Proctor] Backend returned non-200 status code: ${response.status}`);
         }
       } catch (err) {
-        console.error('Error sending proctoring frame:', err);
+        console.error('[Proctor] Network error sending proctoring frame:', err);
       }
     }, 3000); // Check frame every 3 seconds
   };
