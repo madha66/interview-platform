@@ -31,6 +31,8 @@ const candidateSubmissionSchema = new mongoose.Schema({
     grade: { type: String, default: "Pending" }, // Pass, Fail, Pending
     feedback: { type: String, default: "" }
   },
+  phoneDetected: { type: Boolean, default: false },
+  lastPhoneDetectedAt: { type: Date },
   updatedAt: { type: Date, default: Date.now }
 });
 

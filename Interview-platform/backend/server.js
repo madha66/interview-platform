@@ -9,8 +9,8 @@ const app = express()
 connect()
 
 // Parse JSON and URL encoded request bodies
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ limit: '10mb', extended: true }))
 
 // Enable CORS for cross-port communication from Frontend
 app.use((req, res, next) => {
@@ -27,7 +27,8 @@ app.use("/auth", Router);
 app.use("/api/arena", arenaRouter);
 app.use("/", Router);
 
-app.listen(process.env.PORT, () => {
-    console.log(`server is running on port ${process.env.PORT}`)
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`server is running on port ${port}`)
 })
 //google auth routes

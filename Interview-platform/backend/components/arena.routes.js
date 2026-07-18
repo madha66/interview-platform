@@ -111,9 +111,9 @@ router.post('/evaluate', async (req, res) => {
       return res.status(400).json({ error: 'Missing meetingId, studentName, or grade' });
     }
 
-    const submission = await CandidateSubmission.findOne({ 
-      meetingId: meetingId.toUpperCase(), 
-      studentName 
+    const submission = await CandidateSubmission.findOne({
+      meetingId: meetingId.toUpperCase(),
+      studentName
     });
 
     if (!submission) {
@@ -130,6 +130,79 @@ router.post('/evaluate', async (req, res) => {
   } catch (error) {
     console.error('Error evaluating submission:', error);
     return res.status(500).json({ error: 'Server error evaluating candidate' });
+  }
+});
+// 6. Proctoring - Detect phone in video frame
+router.post('/session/:meetingId/student/:studentName/detect-phone', async (req, res) => {
+  try {
+    const { meetingId, studentName } = req.params;
+    const { frame } = req.body; // base64 string
+
+    if (!frame) {
+      return res.status(400).json({ error: 'No video frame provided' });
+    }
+
+    const { detectPhone } = require('../lib/detectorManager');
+    const result = await detectPhone(frame);
+
+    const uppercaseId = meetingId.toUpperCase();
+
+    // Find candidate submission or create a stub so they show up on the dashboard
+    let submission = await CandidateSubmission.findOne({ meetingId: uppercaseId, studentName });
+    if (!submission) {
+      submission = new CandidateSubmission({
+        meetingId: uppercaseId,
+        studentName,
+        code: '',
+        language: 'python',
+        testCaseResults: [],
+        evaluation: {
+          status: 'Pending',
+          grade: 'Pending',
+          feedback: ''
+        }
+      });
+    }
+
+    // Update proctoring status
+    if (result.phone_detected) {
+      submission.phoneDetected = true;
+      submission.lastPhoneDetectedAt = new Date();
+    }
+
+    await submission.save();
+
+    return res.status(200).json({
+      phoneDetected: result.phone_detected,
+      confidence: result.confidence
+    });
+  } catch (error) {
+    console.error('Error detecting phone:', error);
+    return res.status(500).json({ error: 'Failed to process phone detection', details: error.message });
+  }
+});
+
+// 7. Proctoring - Reset phone violation
+router.post('/session/:meetingId/student/:studentName/reset-phone-violation', async (req, res) => {
+  try {
+    const { meetingId, studentName } = req.params;
+    const uppercaseId = meetingId.toUpperCase();
+    const submission = await CandidateSubmission.findOne({
+      meetingId: uppercaseId,
+      studentName
+    });
+    if (!submission) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    submission.phoneDetected = false;
+    submission.lastPhoneDetectedAt = undefined;
+    await submission.save();
+
+    return res.status(200).json({ message: 'Phone violation reset successfully', submission });
+  } catch (error) {
+    console.error('Error resetting phone violation:', error);
+    return res.status(500).json({ error: 'Failed to reset violation', details: error.message });
   }
 });
 

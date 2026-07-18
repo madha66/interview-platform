@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import './arena.css';
 
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : 'https://interview-platform-93yk.onrender.com';
+
 // Wandbox API mapping
 const LANGUAGE_CONFIGS = {
   python: {
@@ -53,10 +57,152 @@ function Arena() {
   const [runResults, setRunResults] = useState([]); // Array of { passed, output, expected }
   const [mySubmission, setMySubmission] = useState(null);
 
+  // Proctoring and Camera states
+  const [activeStudentTab, setActiveStudentTab] = useState('testcases'); // 'testcases' or 'camera'
+  const [cameraStream, setCameraStream] = useState(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [localPhoneDetected, setLocalPhoneDetected] = useState(false);
+  const [detectionConfidence, setDetectionConfidence] = useState(0);
+
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const proctorIntervalRef = useRef(null);
+
   // Auto-refresh interval ref for Instructor dashboard
   const pollingRef = useRef(null);
   // Auto-refresh interval ref for Student to fetch latest evaluation feedback
   const studentFeedbackPollingRef = useRef(null);
+
+  // Proctoring frame sending loop
+  const startProctoringLoop = (stream) => {
+    if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
+
+    proctorIntervalRef.current = setInterval(async () => {
+      if (!videoRef.current || !canvasRef.current) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+
+      // Draw current video frame to the canvas
+      canvas.width = 320;
+      canvas.height = 240;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert canvas frame to base64 jpeg
+      const frameData = canvas.toDataURL('image/jpeg', 0.6); // 60% quality jpeg
+
+      try {
+        const uppercaseId = sessionData?.meetingId || searchMeetingId;
+        if (!uppercaseId || !studentName) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/arena/session/${uppercaseId.toUpperCase()}/student/${studentName}/detect-phone`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ frame: frameData })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.phoneDetected) {
+            setLocalPhoneDetected(true);
+            setDetectionConfidence(data.confidence);
+            setConsoleLogs(prev => {
+              const warning = `[Proctor Alert] Mobile phone detected! (Confidence: ${(data.confidence * 100).toFixed(0)}%)`;
+              if (prev.includes(warning)) return prev;
+              return prev + `\n⚠️ ${warning}\n`;
+            });
+          } else {
+            setLocalPhoneDetected(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error sending proctoring frame:', err);
+      }
+    }, 3000); // Check frame every 3 seconds
+  };
+
+  // Initialize proctoring webcam on student workspace mount
+  useEffect(() => {
+    if (view !== 'STUDENT_WORKSPACE' || !sessionData || !studentName) {
+      // Clean up camera stream and interval if not in student workspace
+      if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+        setIsCameraActive(false);
+      }
+      return;
+    }
+
+    let streamInstance = null;
+    const startCamera = async () => {
+      try {
+        streamInstance = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+        setCameraStream(streamInstance);
+        setIsCameraActive(true);
+        
+        // Wait a tiny bit for the video element to be in the DOM
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = streamInstance;
+          }
+        }, 100);
+
+        // Start sending frames for phone detection
+        startProctoringLoop(streamInstance);
+      } catch (err) {
+        console.error('Error accessing webcam for proctoring:', err);
+        setConsoleLogs(prev => prev + '\n⚠️ WARNING: Webcam access is required for proctoring. Please grant permission.\n');
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
+      if (streamInstance) {
+        streamInstance.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [view, sessionData, studentName]);
+
+  // Handle resetting candidate violation (Instructor)
+  const handleResetViolation = async (sName) => {
+    const activeMeetingId = meetingId || localStorage.getItem('ca_active_session');
+    if (!activeMeetingId) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/arena/session/${activeMeetingId}/student/${sName}/reset-phone-violation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset violation');
+      }
+
+      const data = await response.json();
+      
+      // Update local state list
+      const updatedList = submissions.map(s => {
+        if (s.studentName === sName) {
+          return { ...s, phoneDetected: false, lastPhoneDetectedAt: undefined };
+        }
+        return s;
+      });
+      setSubmissions(updatedList);
+      
+      if (selectedSub && selectedSub.studentName === sName) {
+        setSelectedSub(prev => ({ ...prev, phoneDetected: false, lastPhoneDetectedAt: undefined }));
+      }
+      
+      alert(`Violation warning cleared for ${sName}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error resetting violation: ' + err.message);
+    }
+  };
 
   // Handle changing language code template
   const handleLangChange = (lang) => {
@@ -96,7 +242,7 @@ function Arena() {
     }
 
     try {
-      const response = await fetch('https://interview-platform-93yk.onrender.com/api/arena/create', {
+      const response = await fetch(`${API_BASE_URL}/api/arena/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,7 +278,7 @@ function Arena() {
 
     const fetchSubmissions = async () => {
       try {
-        const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/submissions/${mId}`);
+        const response = await fetch(`${API_BASE_URL}/api/arena/submissions/${mId}`);
         if (response.ok) {
           const data = await response.json();
           setSubmissions(data);
@@ -162,7 +308,7 @@ function Arena() {
     }
 
     try {
-      const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/session/${searchMeetingId.trim().toUpperCase()}`);
+      const response = await fetch(`${API_BASE_URL}/api/arena/session/${searchMeetingId.trim().toUpperCase()}`);
       if (!response.ok) {
         throw new Error('Invalid Meeting ID. Session not found.');
       }
@@ -190,7 +336,7 @@ function Arena() {
 
     const fetchMySubmission = async () => {
       try {
-        const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/submissions/${mId}`);
+        const response = await fetch(`${API_BASE_URL}/api/arena/submissions/${mId}`);
         if (response.ok) {
           const allSubmissions = await response.json();
           const found = allSubmissions.find(s => s.studentName.toLowerCase() === name.toLowerCase());
@@ -322,7 +468,7 @@ function Arena() {
     }
 
     try {
-      const response = await fetch('https://interview-platform-93yk.onrender.com/api/arena/submit', {
+      const response = await fetch(`${API_BASE_URL}/api/arena/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -355,7 +501,7 @@ function Arena() {
     if (!selectedSub || !meetingId) return;
 
     try {
-      const response = await fetch('https://interview-platform-93yk.onrender.com/api/arena/evaluate', {
+      const response = await fetch(`${API_BASE_URL}/api/arena/evaluate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -407,7 +553,7 @@ function Arena() {
     if (view !== 'STUDENT_WORKSPACE' || !sessionData || !studentName) return;
 
     const delayDebounceFn = setTimeout(() => {
-      fetch('https://interview-platform-93yk.onrender.com/api/arena/submit', {
+      fetch(`${API_BASE_URL}/api/arena/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -440,7 +586,7 @@ function Arena() {
 
         const resumeStudentSession = async () => {
           try {
-            const response = await fetch(`https://interview-platform-93yk.onrender.com/api/arena/session/${savedSession}`);
+            const response = await fetch(`${API_BASE_URL}/api/arena/session/${savedSession}`);
             if (response.ok) {
               const data = await response.json();
               setSessionData(data);
@@ -458,6 +604,7 @@ function Arena() {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
       if (studentFeedbackPollingRef.current) clearInterval(studentFeedbackPollingRef.current);
+      if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
     };
   }, []);
 
@@ -644,10 +791,13 @@ function Arena() {
                   submissions.map((sub, idx) => (
                     <div
                       key={idx}
-                      className={`candidate-item ${selectedSub && selectedSub.studentName === sub.studentName ? 'active' : ''}`}
+                      className={`candidate-item ${sub.phoneDetected ? 'violation' : ''} ${selectedSub && selectedSub.studentName === sub.studentName ? 'active' : ''}`}
                       onClick={() => handleSelectCandidate(sub)}
                     >
-                      <strong style={{ display: 'block', marginBottom: '4px' }}>{sub.studentName}</strong>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ display: 'block', marginBottom: '4px' }}>{sub.studentName}</strong>
+                        {sub.phoneDetected && <span className="instructor-violation-tag">⚠️ PHONE DETECTED</span>}
+                      </div>
                       <div className="cand-meta">
                         <span>Lang: {sub.language.toUpperCase()}</span>
                         <span className={`status-badge ${sub.evaluation.status.toLowerCase()}`}>
@@ -670,6 +820,23 @@ function Arena() {
                       Last Updated: {new Date(selectedSub.updatedAt).toLocaleTimeString()}
                     </p>
                   </div>
+
+                  {selectedSub.phoneDetected && (
+                    <div className="instructor-alert-banner">
+                      <div className="alert-title">⚠️ PROCTORING ALERT: Mobile Phone Detected!</div>
+                      <p>
+                        A mobile phone was detected in this candidate's camera feed during the session. 
+                        {selectedSub.lastPhoneDetectedAt && ` Last detected: ${new Date(selectedSub.lastPhoneDetectedAt).toLocaleTimeString()}`}
+                      </p>
+                      <button 
+                        type="button" 
+                        className="dismiss-violation-btn" 
+                        onClick={() => handleResetViolation(selectedSub.studentName)}
+                      >
+                        Dismiss Violation Warning
+                      </button>
+                    </div>
+                  )}
 
                   <div>
                     <h4 style={{ margin: '0 0 0.5rem 0', fontFamily: 'Space Mono' }}>Submitted Code</h4>
@@ -741,32 +908,80 @@ function Arena() {
               <div className="question-desc">{sessionData.questionDesc}</div>
             </div>
 
-            <div className="testcases-list">
-              <h4>Expected Test Cases</h4>
-              {sessionData.testCases.map((tc, idx) => (
-                <div key={idx} className="testcase-item-box">
-                  <div style={{ marginBottom: '8px' }}>
-                    <div className="tc-box-label">Test Case {idx + 1} Input</div>
-                    <div className="tc-box-val">{tc.input || 'No input parameter'}</div>
-                  </div>
-                  <div>
-                    <div className="tc-box-label">Expected Output</div>
-                    <div className="tc-box-val">{tc.expectedOutput}</div>
-                  </div>
-                  {runResults[idx] && (
-                    <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-                      <div className="tc-box-label">Your Output</div>
-                      <div className="tc-box-val" style={{ color: runResults[idx].passed ? '#10b981' : '#ef4444' }}>
-                        {runResults[idx].output || 'No output'}
-                      </div>
-                      <div style={{ marginTop: '4px', fontWeight: 'bold', fontSize: '0.8rem', color: runResults[idx].passed ? '#10b981' : '#ef4444' }}>
-                        {runResults[idx].passed ? '✓ Passed' : '✗ Failed'}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+            {/* Tabs to swap between Test Cases and Camera Feed */}
+            <div className="workspace-tabs">
+              <button
+                type="button"
+                className={`workspace-tab-btn ${activeStudentTab === 'testcases' ? 'active' : ''}`}
+                onClick={() => setActiveStudentTab('testcases')}
+              >
+                📋 Test Cases
+              </button>
+              <button
+                type="button"
+                className={`workspace-tab-btn ${activeStudentTab === 'camera' ? 'active' : ''}`}
+                onClick={() => setActiveStudentTab('camera')}
+              >
+                📷 Camera Feed {localPhoneDetected && <span className="warning-dot">●</span>}
+              </button>
             </div>
+
+            {/* Always render the proctor camera elements so background capture continues */}
+            <div 
+              className="proctor-camera-card" 
+              style={{ display: activeStudentTab === 'camera' ? 'block' : 'none' }}
+            >
+              <h4>Live Proctoring Feed</h4>
+              <div className="video-wrapper">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="proctor-video"
+                />
+                {localPhoneDetected && (
+                  <div className="phone-warning-overlay animate-pulse">
+                    ⚠️ PHONE DETECTED ({(detectionConfidence * 100).toFixed(0)}%)
+                  </div>
+                )}
+              </div>
+              <p className="proctor-caption">
+                {isCameraActive 
+                  ? "Your camera is active and being monitored for security. Please keep your phone away." 
+                  : "Connecting camera..."}
+              </p>
+            </div>
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+            {activeStudentTab === 'testcases' && (
+              <div className="testcases-list">
+                <h4>Expected Test Cases</h4>
+                {sessionData.testCases.map((tc, idx) => (
+                  <div key={idx} className="testcase-item-box">
+                    <div style={{ marginBottom: '8px' }}>
+                      <div className="tc-box-label">Test Case {idx + 1} Input</div>
+                      <div className="tc-box-val">{tc.input || 'No input parameter'}</div>
+                    </div>
+                    <div>
+                      <div className="tc-box-label">Expected Output</div>
+                      <div className="tc-box-val">{tc.expectedOutput}</div>
+                    </div>
+                    {runResults[idx] && (
+                      <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                        <div className="tc-box-label">Your Output</div>
+                        <div className="tc-box-val" style={{ color: runResults[idx].passed ? '#10b981' : '#ef4444' }}>
+                          {runResults[idx].output || 'No output'}
+                        </div>
+                        <div style={{ marginTop: '4px', fontWeight: 'bold', fontSize: '0.8rem', color: runResults[idx].passed ? '#10b981' : '#ef4444' }}>
+                          {runResults[idx].passed ? '✓ Passed' : '✗ Failed'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Display Evaluation feedback when posted by instructor */}
             {mySubmission && mySubmission.evaluation && mySubmission.evaluation.status === 'Evaluated' && (
