@@ -174,7 +174,8 @@ router.post('/session/:meetingId/student/:studentName/detect-phone', async (req,
 
     return res.status(200).json({
       phoneDetected: result.phone_detected,
-      confidence: result.confidence
+      confidence: result.confidence,
+      status: result.status
     });
   } catch (error) {
     console.error('Error detecting phone:', error);

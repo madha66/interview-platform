@@ -15,7 +15,7 @@ function initPythonProcess() {
 
   console.log('Spawning Python phone detector process...');
   // Spawn Python
-  pythonProcess = spawn('python', [scriptPath]);
+  pythonProcess = spawn('python', ['-u', scriptPath]);
 
   // Track stdout buffer
   let stdoutBuffer = '';
@@ -106,6 +106,12 @@ function detectPhone(base64Frame) {
     // Lazy initialization
     if (!pythonProcess) {
       initPythonProcess();
+    }
+
+    // If detector is not ready yet, or is already busy processing a frame,
+    // do not queue. Instead, resolve immediately to avoid a queuing backlog.
+    if (!isReady || isProcessing) {
+      return resolve({ phone_detected: false, confidence: 0, status: 'skipped' });
     }
 
     // Strip data URL prefix if present (e.g. "data:image/jpeg;base64,")

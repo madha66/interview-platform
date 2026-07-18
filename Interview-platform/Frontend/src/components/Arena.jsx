@@ -104,6 +104,10 @@ function Arena() {
 
         if (response.ok) {
           const data = await response.json();
+          if (data.status === 'skipped') {
+            // Ignore skipped frames to preserve current UI warning state
+            return;
+          }
           if (data.phoneDetected) {
             setLocalPhoneDetected(true);
             setDetectionConfidence(data.confidence);

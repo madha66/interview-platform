@@ -19,9 +19,20 @@ except ImportError as e:
     sys.exit(1)
 
 # Initialize YOLO model once
-# yolo11n.pt will automatically download if not present in the current dir or ~/.config/Ultralytics
+# yolo11n.pt will automatically download if not present in the parent paths or current dir
 try:
-    model = YOLO("yolo11n.pt")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root_model = os.path.abspath(os.path.join(script_dir, "..", "..", "yolo11n.pt"))
+    backend_model = os.path.abspath(os.path.join(script_dir, "..", "yolo11n.pt"))
+    
+    if os.path.exists(project_root_model):
+        model_path = project_root_model
+    elif os.path.exists(backend_model):
+        model_path = backend_model
+    else:
+        model_path = "yolo11n.pt"
+
+    model = YOLO(model_path)
 except Exception as e:
     print(json.dumps({"error": f"Failed to load model: {str(e)}"}), flush=True)
     sys.exit(1)
