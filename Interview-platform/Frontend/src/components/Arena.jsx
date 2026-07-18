@@ -73,10 +73,13 @@ function Arena() {
   // Auto-refresh interval ref for Student to fetch latest evaluation feedback
   const studentFeedbackPollingRef = useRef(null);
 
+  // Debug log at top-level of component render loop
+  console.error(`[Arena Debug] Render View: ${view}, HasSessionData: ${!!sessionData}, StudentName: "${studentName}"`);
+
   // Proctoring frame sending loop
   const startProctoringLoop = (stream) => {
     if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
-    console.log("[Proctor] Active stream detected. Initializing frame capture interval...");
+    console.error("[Proctor] Active stream detected. Initializing frame capture interval...");
 
     proctorIntervalRef.current = setInterval(async () => {
       if (!videoRef.current || !canvasRef.current) {
@@ -104,6 +107,7 @@ function Arena() {
         }
 
         const url = `${API_BASE_URL}/api/arena/session/${uppercaseId.toUpperCase()}/student/${studentName}/detect-phone`;
+        console.error(`[Proctor Debug] Sending frame to backend... URL: ${url}`);
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -112,7 +116,7 @@ function Arena() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`[Proctor] Server response: phoneDetected=${data.phoneDetected}, confidence=${data.confidence}, status=${data.status}`);
+          console.error(`[Proctor Debug] Server response: phoneDetected=${data.phoneDetected}, confidence=${data.confidence}, status=${data.status}`);
           
           if (data.status === 'skipped') {
             // Ignore skipped frames to preserve current UI warning state
@@ -140,7 +144,9 @@ function Arena() {
 
   // Initialize proctoring webcam on student workspace mount
   useEffect(() => {
+    console.error(`[Proctor Debug] Camera useEffect triggered. View: ${view}, HasSessionData: ${!!sessionData}, StudentName: "${studentName}"`);
     if (view !== 'STUDENT_WORKSPACE' || !sessionData || !studentName) {
+      console.error("[Proctor Debug] useEffect condition not met. Skipping camera start.");
       // Clean up camera stream and interval if not in student workspace
       if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
       if (cameraStream) {
@@ -150,6 +156,7 @@ function Arena() {
       }
       return;
     }
+    console.error("[Proctor Debug] useEffect condition MET. Starting camera stream...");
 
     let streamInstance = null;
     const startCamera = async () => {
