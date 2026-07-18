@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import './arena.css';
 
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000'
+  ? 'http://localhost:3000'
   : 'https://interview-platform-93yk.onrender.com';
 
 // Wandbox API mapping
@@ -929,7 +929,7 @@ function Arena() {
             {/* Always render the proctor camera elements so background capture continues */}
             <div 
               className="proctor-camera-card" 
-              style={{ display: activeStudentTab === 'camera' ? 'block' : 'none' }}
+              style={activeStudentTab === 'camera' ? {} : { position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, pointerEvents: 'none' }}
             >
               <h4>Live Proctoring Feed</h4>
               <div className="video-wrapper">
