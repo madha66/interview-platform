@@ -4,7 +4,7 @@ import './arena.css';
 
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000'
-  : 'https://interview-platform-93yk.onrender.com';
+  : 'https://interview-platform-1-s0ci.onrender.com';
 
 // Wandbox API mapping
 const LANGUAGE_CONFIGS = {
@@ -117,7 +117,7 @@ function Arena() {
         if (response.ok) {
           const data = await response.json();
           console.error(`[Proctor Debug] Server response: phoneDetected=${data.phoneDetected}, confidence=${data.confidence}, status=${data.status}`);
-          
+
           if (data.status === 'skipped') {
             // Ignore skipped frames to preserve current UI warning state
             return;
@@ -164,7 +164,7 @@ function Arena() {
         streamInstance = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
         setCameraStream(streamInstance);
         setIsCameraActive(true);
-        
+
         // Wait a tiny bit for the video element to be in the DOM
         setTimeout(() => {
           if (videoRef.current) {
@@ -206,7 +206,7 @@ function Arena() {
       }
 
       const data = await response.json();
-      
+
       // Update local state list
       const updatedList = submissions.map(s => {
         if (s.studentName === sName) {
@@ -215,11 +215,11 @@ function Arena() {
         return s;
       });
       setSubmissions(updatedList);
-      
+
       if (selectedSub && selectedSub.studentName === sName) {
         setSelectedSub(prev => ({ ...prev, phoneDetected: false, lastPhoneDetectedAt: undefined }));
       }
-      
+
       alert(`Violation warning cleared for ${sName}`);
     } catch (err) {
       console.error(err);
@@ -848,12 +848,12 @@ function Arena() {
                     <div className="instructor-alert-banner">
                       <div className="alert-title">⚠️ PROCTORING ALERT: Mobile Phone Detected!</div>
                       <p>
-                        A mobile phone was detected in this candidate's camera feed during the session. 
+                        A mobile phone was detected in this candidate's camera feed during the session.
                         {selectedSub.lastPhoneDetectedAt && ` Last detected: ${new Date(selectedSub.lastPhoneDetectedAt).toLocaleTimeString()}`}
                       </p>
-                      <button 
-                        type="button" 
-                        className="dismiss-violation-btn" 
+                      <button
+                        type="button"
+                        className="dismiss-violation-btn"
                         onClick={() => handleResetViolation(selectedSub.studentName)}
                       >
                         Dismiss Violation Warning
@@ -950,8 +950,8 @@ function Arena() {
             </div>
 
             {/* Always render the proctor camera elements so background capture continues */}
-            <div 
-              className="proctor-camera-card" 
+            <div
+              className="proctor-camera-card"
               style={activeStudentTab === 'camera' ? {} : { position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, pointerEvents: 'none' }}
             >
               <h4>Live Proctoring Feed</h4>
@@ -970,8 +970,8 @@ function Arena() {
                 )}
               </div>
               <p className="proctor-caption">
-                {isCameraActive 
-                  ? "Your camera is active and being monitored for security. Please keep your phone away." 
+                {isCameraActive
+                  ? "Your camera is active and being monitored for security. Please keep your phone away."
                   : "Connecting camera..."}
               </p>
             </div>
