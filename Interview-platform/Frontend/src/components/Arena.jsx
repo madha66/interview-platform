@@ -25,6 +25,21 @@ const LANGUAGE_CONFIGS = {
   }
 };
 
+// Helper to load script tags dynamically from CDN
+const loadScript = (src) => {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+    document.head.appendChild(script);
+  });
+};
+
 function Arena() {
   // Navigation & Role states
   // Views: 'SELECT_ROLE', 'INSTRUCTOR_CREATE', 'INSTRUCTOR_DASHBOARD', 'STUDENT_JOIN', 'STUDENT_WORKSPACE'
@@ -64,9 +79,13 @@ function Arena() {
   const [localPhoneDetected, setLocalPhoneDetected] = useState(false);
   const [detectionConfidence, setDetectionConfidence] = useState(0);
 
+  const [proctorModel, setProctorModel] = useState(null);
+  const [modelLoading, setModelLoading] = useState(false);
+
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const proctorIntervalRef = useRef(null);
+  const proctorModelRef = useRef(null);
 
   // Auto-refresh interval ref for Instructor dashboard
   const pollingRef = useRef(null);
@@ -79,25 +98,22 @@ function Arena() {
   // Proctoring frame sending loop
   const startProctoringLoop = (stream) => {
     if (proctorIntervalRef.current) clearInterval(proctorIntervalRef.current);
-    console.error("[Proctor] Active stream detected. Initializing frame capture interval...");
+    console.error("[Proctor] Active stream detected. Initializing client-side frame detection interval...");
 
     proctorIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || !canvasRef.current) {
-        console.warn("[Proctor] Capture elements not available in DOM yet.");
+      if (!videoRef.current) {
+        console.warn("[Proctor] Video element not available in DOM yet.");
+        return;
+      }
+
+      // Check if TensorFlow model is loaded
+      const model = proctorModelRef.current;
+      if (!model) {
+        console.warn("[Proctor] AI model is still loading in browser...");
         return;
       }
 
       const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-
-      // Draw current video frame to the canvas
-      canvas.width = 320;
-      canvas.height = 240;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Convert canvas frame to base64 jpeg
-      const frameData = canvas.toDataURL('image/jpeg', 0.6); // 60% quality jpeg
 
       try {
         const uppercaseId = sessionData?.meetingId || searchMeetingId;
@@ -106,41 +122,74 @@ function Arena() {
           return;
         }
 
-        const url = `${API_BASE_URL}/api/arena/session/${uppercaseId.toUpperCase()}/student/${studentName}/detect-phone`;
-        console.error(`[Proctor Debug] Sending frame to backend... URL: ${url}`);
+        // Run object detection directly on the video element in the browser!
+        const predictions = await model.detect(video);
+        
+        // Search for 'cell phone' in predictions
+        const phonePrediction = predictions.find(p => p.class === 'cell phone' && p.score > 0.35);
+        const isPhoneDetected = !!phonePrediction;
+        const confidence = phonePrediction ? phonePrediction.score : 0;
+
+        console.error(`[Proctor Debug] Client-side detection: phoneDetected=${isPhoneDetected}, confidence=${confidence}`);
+
+        // Update local state
+        if (isPhoneDetected) {
+          setLocalPhoneDetected(true);
+          setDetectionConfidence(confidence);
+          setConsoleLogs(prev => {
+            const warning = `[Proctor Alert] Mobile phone detected! (Confidence: ${(confidence * 100).toFixed(0)}%)`;
+            if (prev.includes(warning)) return prev;
+            return prev + `\n⚠️ ${warning}\n`;
+          });
+        } else {
+          setLocalPhoneDetected(false);
+        }
+
+        // Report violation status to backend (so instructor is notified)
+        const url = `${API_BASE_URL}/api/arena/session/${uppercaseId.toUpperCase()}/student/${studentName}/report-phone-violation`;
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ frame: frameData })
+          body: JSON.stringify({ phoneDetected: isPhoneDetected, confidence })
         });
 
         if (response.ok) {
           const data = await response.json();
-          console.error(`[Proctor Debug] Server response: phoneDetected=${data.phoneDetected}, confidence=${data.confidence}, status=${data.status}`);
-
-          if (data.status === 'skipped') {
-            // Ignore skipped frames to preserve current UI warning state
-            return;
-          }
-          if (data.phoneDetected) {
-            setLocalPhoneDetected(true);
-            setDetectionConfidence(data.confidence);
-            setConsoleLogs(prev => {
-              const warning = `[Proctor Alert] Mobile phone detected! (Confidence: ${(data.confidence * 100).toFixed(0)}%)`;
-              if (prev.includes(warning)) return prev;
-              return prev + `\n⚠️ ${warning}\n`;
-            });
-          } else {
-            setLocalPhoneDetected(false);
-          }
+          console.error(`[Proctor Debug] Synced violation status with backend. phoneDetected=${data.phoneDetected}`);
         } else {
-          console.error(`[Proctor] Backend returned non-200 status code: ${response.status}`);
+          console.error(`[Proctor] Backend returned non-200 status code when reporting violation: ${response.status}`);
         }
       } catch (err) {
-        console.error('[Proctor] Network error sending proctoring frame:', err);
+        console.error('[Proctor] Error during client-side object detection:', err);
       }
-    }, 3000); // Check frame every 3 seconds
+    }, 2500); // Check frame every 2.5 seconds
   };
+
+  // Load TensorFlow.js and COCO-SSD client-side AI model
+  useEffect(() => {
+    if (view !== 'STUDENT_WORKSPACE') return;
+
+    const loadModel = async () => {
+      try {
+        setModelLoading(true);
+        setConsoleLogs(prev => prev + '\n[Proctor] Loading browser-based AI object detection...\n');
+        
+        await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
+        await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd');
+        
+        console.error("[Proctor Debug] TFJS and COCO-SSD scripts loaded. Loading model weights...");
+        const loadedModel = await window.cocoSsd.load();
+        proctorModelRef.current = loadedModel;
+        setProctorModel(loadedModel);
+        setModelLoading(false);
+        setConsoleLogs(prev => prev + '[Proctor] AI model loaded successfully. Webcam proctoring is active.\n');
+      } catch (err) {
+        console.error('[Proctor Debug] Failed to load browser AI model:', err);
+        setConsoleLogs(prev => prev + '\n⚠️ [Proctor Error] Failed to load AI proctoring models. Please check your network.\n');
+      }
+    };
+    loadModel();
+  }, [view]);
 
   // Initialize proctoring webcam on student workspace mount
   useEffect(() => {

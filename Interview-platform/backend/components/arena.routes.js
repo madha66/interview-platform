@@ -183,6 +183,42 @@ router.post('/session/:meetingId/student/:studentName/detect-phone', async (req,
   }
 });
 
+// 6.5 Proctoring - Report phone violation status from student client
+router.post('/session/:meetingId/student/:studentName/report-phone-violation', async (req, res) => {
+  try {
+    const { meetingId, studentName } = req.params;
+    const { phoneDetected, confidence } = req.body;
+    const uppercaseId = meetingId.toUpperCase();
+
+    let submission = await CandidateSubmission.findOne({ meetingId: uppercaseId, studentName });
+    if (!submission) {
+      submission = new CandidateSubmission({
+        meetingId: uppercaseId,
+        studentName,
+        code: '',
+        language: 'python',
+        testCaseResults: [],
+        evaluation: {
+          status: 'Pending',
+          grade: 'Pending',
+          feedback: ''
+        }
+      });
+    }
+
+    if (phoneDetected) {
+      submission.phoneDetected = true;
+      submission.lastPhoneDetectedAt = new Date();
+    }
+
+    await submission.save();
+    return res.status(200).json({ success: true, phoneDetected: submission.phoneDetected });
+  } catch (error) {
+    console.error('Error reporting phone violation:', error);
+    return res.status(500).json({ error: 'Failed to report phone violation', details: error.message });
+  }
+});
+
 // 7. Proctoring - Reset phone violation
 router.post('/session/:meetingId/student/:studentName/reset-phone-violation', async (req, res) => {
   try {
